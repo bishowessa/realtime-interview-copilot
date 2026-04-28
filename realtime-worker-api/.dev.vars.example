@@ -2,7 +2,7 @@ DEEPGRAM_API_KEY=
 GOOGLE_GENERATIVE_AI_API_KEY=
 
 # AI model selection (see Gemini model list)
-GEMINI_MODEL=gemini-3.1-pro
+GEMINI_MODEL=gemini-2.0-flash
 
 # Better Auth
 BETTER_AUTH_SECRET=your-random-secret-here
