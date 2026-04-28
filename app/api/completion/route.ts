@@ -7,8 +7,14 @@ export async function POST(req: Request) {
     const bg = payload.bg || "";
     
     let finalPrompt = prompt;
-    if (payload.flag === "copilot" && bg) {
-      finalPrompt = `Context:\n${bg}\n\nTask:\n${prompt}`;
+    if (payload.flag === "copilot") {
+      const systemInstruction = "You are an expert senior software engineer and interview copilot. You possess vast general knowledge about programming, system design, and computer science. Answer the interviewer's questions flawlessly using your full capabilities. Additionally, you will be provided with the candidate's personal background context. Whenever relevant, naturally weave this context into your technical answers to personalize them, but never restrict your knowledge only to the context. If a question is general, answer it fully.";
+      
+      if (bg) {
+        finalPrompt = `${systemInstruction}\n\nCandidate's Background Context:\n${bg}\n\nInterviewer's Question / Task:\n${prompt}`;
+      } else {
+        finalPrompt = `${systemInstruction}\n\nInterviewer's Question / Task:\n${prompt}`;
+      }
     } else if (payload.flag === "summarizer") {
       finalPrompt = `Summarize the following:\n${prompt}`;
     }
