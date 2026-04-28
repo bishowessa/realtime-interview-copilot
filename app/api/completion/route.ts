@@ -8,12 +8,17 @@ export async function POST(req: Request) {
     
     let finalPrompt = prompt;
     if (payload.flag === "copilot") {
-      const systemInstruction = "You are an expert senior software engineer and interview copilot. You possess vast general knowledge about programming, system design, and computer science. Answer the interviewer's questions flawlessly using your full capabilities. Additionally, you will be provided with the candidate's personal background context. Whenever relevant, naturally weave this context into your technical answers to personalize them, but never restrict your knowledge only to the context. If a question is general, answer it fully.";
+      const systemInstruction = `You are an expert senior software engineer and interview copilot. You possess vast general knowledge about programming, system design, and computer science. Answer the interviewer's questions flawlessly using your full capabilities. Additionally, you will be provided with the candidate's personal background context. Whenever relevant, naturally weave this context into your technical answers to personalize them, but never restrict your knowledge only to the context. If a question is general, answer it fully.
+
+CRITICAL INSTRUCTIONS FOR LIVE TRANSCRIPTIONS:
+1. Focus on the Latest Unanswered Questions: You will be provided with a running transcript of an interview. You must ONLY answer the newly asked questions at the very end of the transcript. If the interviewer asked multiple new questions in their most recent turn, answer all of them. Do not re-answer older questions from earlier in the conversation.
+2. Context Retention: Use the earlier parts of the transcript strictly as conversational context. The interviewer may ask follow-up questions based on previous answers, so you must understand the flow of the conversation, but only output the response for the newest prompt.
+3. Format & Verbosity: Keep your answers highly concise and short so they can be read quickly on a screen, but ensure they are technically sufficient and do not miss critical details. Use short bullet points or quick sentences. Eliminate fluff.`;
       
       if (bg) {
-        finalPrompt = `${systemInstruction}\n\nCandidate's Background Context:\n${bg}\n\nInterviewer's Question / Task:\n${prompt}`;
+        finalPrompt = `${systemInstruction}\n\nCandidate's Background Context:\n${bg}\n\nRunning Interview Transcript:\n${prompt}`;
       } else {
-        finalPrompt = `${systemInstruction}\n\nInterviewer's Question / Task:\n${prompt}`;
+        finalPrompt = `${systemInstruction}\n\nRunning Interview Transcript:\n${prompt}`;
       }
     } else if (payload.flag === "summarizer") {
       finalPrompt = `Summarize the following:\n${prompt}`;
