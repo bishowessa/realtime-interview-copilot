@@ -239,7 +239,7 @@ export default function MainPage() {
               />
             </div>
 
-            <div className="flex flex-col shrink-0 md:h-full md:min-h-0">
+            <div className="hidden md:flex flex-col shrink-0 md:h-full md:min-h-0">
               <button
                 type="button"
                 className="md:hidden flex items-center justify-between gap-2 w-full px-3 py-2.5 border-t border-white/[0.08] bg-zinc-900/55 text-left text-xs text-zinc-300 hover:bg-zinc-900/80 transition-colors"

@@ -316,7 +316,7 @@ export function Copilot({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 overflow-y-auto md:overflow-hidden">
       {error && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 px-4 py-2 text-center text-xs bg-red-500/90 backdrop-blur-xl text-white z-[60] animate-fade-in-scale rounded-xl border border-red-400/20 shadow-xl max-w-md">
           {error.message}
@@ -324,9 +324,9 @@ export function Copilot({
       )}
 
       {/* Top Section: Context & Transcription */}
-      <div className="grid gap-4 md:grid-cols-2 h-[280px] shrink-0">
+      <div className="grid gap-4 md:grid-cols-2 h-auto md:h-[280px] shrink-0">
         {/* Context & Controls Card */}
-        <div className="glass-card p-5 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+        <div className="glass-card p-5 flex flex-col gap-3 min-h-[220px] md:h-full md:min-h-0 overflow-hidden">
           <div className="flex items-center justify-between shrink-0">
             <Label
               htmlFor="system_prompt"
@@ -412,7 +412,7 @@ export function Copilot({
         </div>
 
         {/* Transcription Card */}
-        <div className="glass-card p-5 flex flex-col h-full min-h-0 overflow-hidden">
+        <div className="glass-card p-5 flex flex-col min-h-[220px] md:h-full md:min-h-0 overflow-hidden">
           <div className="flex items-center justify-between mb-3 shrink-0">
             <Label
               htmlFor="transcription"
@@ -439,7 +439,7 @@ export function Copilot({
       </div>
 
       {/* AI Output Section — toolbar keeps Save visible; body has even horizontal padding */}
-      <div className="flex-1 min-h-0 flex flex-col glass-card overflow-hidden rounded-2xl border border-white/[0.06]">
+      <div className="flex-1 min-h-[300px] md:min-h-0 flex flex-col glass-card overflow-hidden rounded-2xl border border-white/[0.06] shrink-0 md:shrink">
         <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/[0.06] bg-zinc-900/30">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 truncate min-w-0 pr-2">
             Output
