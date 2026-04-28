@@ -91,18 +91,6 @@ export function Copilot({
       target.tagName === "INPUT" || target.tagName === "TEXTAREA";
 
     switch (event.key.toLowerCase()) {
-      case "enter":
-        if (!isTypingInInput) {
-          event.preventDefault();
-          if (formRef.current) {
-            const submitEvent = new Event("submit", {
-              cancelable: true,
-              bubbles: true,
-            });
-            formRef.current.dispatchEvent(submitEvent);
-          }
-        }
-        break;
       case "s":
         if (!isTypingInInput) {
           event.preventDefault();
@@ -356,9 +344,8 @@ export function Copilot({
               addTranscriptionSegment={addTranscriptionSegment}
             />
 
-            <form
-              ref={formRef}
-              onSubmit={handleSubmit}
+            <div
+              ref={formRef as any}
               className="w-full flex items-center justify-between gap-3"
             >
               {/* Mode Switcher */}
@@ -382,8 +369,14 @@ export function Copilot({
 
               <Button
                 className="h-9 px-6 accent-gradient text-white font-medium shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-[0.97] text-xs tracking-wide rounded-xl"
-                type={isLoading ? "button" : "submit"}
-                onClick={isLoading ? stop : undefined}
+                type="button"
+                onClick={(e) => {
+                  if (isLoading) {
+                    stop(e);
+                  } else {
+                    handleSubmit(e as any);
+                  }
+                }}
               >
                 {isLoading ? (
                   <div className="flex items-center gap-1">
@@ -407,7 +400,7 @@ export function Copilot({
                   </span>
                 )}
               </Button>
-            </form>
+            </div>
           </div>
         </div>
 
