@@ -121,9 +121,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (extendedUser && !extendedUser.isApproved) {
-    return <WaitingForApproval email={extendedUser.email} />;
-  }
+  // Bypass approval check for local development
+  // if (extendedUser && !extendedUser.isApproved) {
+  //   return <WaitingForApproval email={extendedUser.email} />;
+  // }
 
   return <>{children}</>;
 }

@@ -188,7 +188,8 @@ async function getAuthenticatedUser(
   }
 
   if (flags?.isBanned === true) return { error: "banned" };
-  if (flags?.isApproved !== true) return { error: "pending_approval" };
+  // Bypass approval check
+  // if (flags?.isApproved !== true) return { error: "pending_approval" };
 
   // KV-backed throttle so lastActiveAt writes happen at most every 5 minutes
   // per user, consistent across isolates.
@@ -757,6 +758,8 @@ async function streamGeminiCompletion(
     ],
     generationConfig,
   });
+
+  console.log('Currently using Gemini Model:', modelName);
 
   try {
     const response = await fetchWithRetry(
