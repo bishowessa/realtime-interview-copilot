@@ -45,7 +45,6 @@ const devSecurityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
   assetPrefix: isDev ? undefined : "./",
   images: {
     unoptimized: true,
