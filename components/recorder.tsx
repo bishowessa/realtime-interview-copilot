@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Loader2, MicOffIcon } from "lucide-react";
 import { TranscriptionSegment, TranscriptionWord } from "@/lib/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useClientReady } from "@/hooks/useClientReady";
 import { BACKEND_API_URL } from "@/lib/constant";
 import posthog from "posthog-js";
@@ -32,6 +39,7 @@ export default function RecorderTranscriber({
   const [isElectron, setIsElectron] = useState<boolean | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [audioSource, setAudioSource] = useState<"system" | "microphone">("system");
 
   const connectionRef = useRef<LiveClient | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -74,33 +82,41 @@ export default function RecorderTranscriber({
 
     let media: MediaStream;
     try {
-      // getDisplayMedia requires a video track; in Electron our main-process
-      // handler (setDisplayMediaRequestHandler) auto-selects the primary
-      // screen and pairs it with system-audio loopback, so no picker appears.
-      // In the browser build, the user picks a tab/window and enables
-      // "Share audio" to grant system/tab audio.
-      // NOTE: Electron 41 / Chromium rejects advanced audio constraints
-      // (echoCancellation, sampleRate, channelCount, etc.) on
-      // getDisplayMedia with "Invalid capture constraints". For display
-      // capture we must pass `audio: true` (or an empty object) and let
-      // the loopback source decide the format.
-      media = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      });
+      if (audioSource === "microphone") {
+        media = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+      } else {
+        // getDisplayMedia requires a video track; in Electron our main-process
+        // handler (setDisplayMediaRequestHandler) auto-selects the primary
+        // screen and pairs it with system-audio loopback, so no picker appears.
+        // In the browser build, the user picks a tab/window and enables
+        // "Share audio" to grant system/tab audio.
+        // NOTE: Electron 41 / Chromium rejects advanced audio constraints
+        // (echoCancellation, sampleRate, channelCount, etc.) on
+        // getDisplayMedia with "Invalid capture constraints". For display
+        // capture we must pass `audio: true` (or an empty object) and let
+        // the loopback source decide the format.
+        media = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true,
+        });
 
-      media.getVideoTracks().forEach((track) => track.stop());
+        media.getVideoTracks().forEach((track) => track.stop());
+      }
 
       if (media.getAudioTracks().length === 0) {
         media.getTracks().forEach((t) => t.stop());
-        throw new Error("No system audio track available");
+        throw new Error("No audio track available");
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       const hint = isElectron
         ? "Grant Screen Recording permission in System Settings, then try again."
-        : "Pick the tab or window playing audio and enable \"Share audio\".";
-      setErrorMessage(`Could not capture system audio. ${hint} (${msg})`);
+        : audioSource === "microphone"
+          ? "Please grant microphone permissions in your browser."
+          : "Pick the tab or window playing audio and enable \"Share audio\".";
+      setErrorMessage(`Could not capture audio. ${hint} (${msg})`);
       setSessionState("idle");
       return;
     }
@@ -230,7 +246,7 @@ export default function RecorderTranscriber({
         addSegmentRef.current(segment);
       }
     });
-  }, [isElectron, teardown]);
+  }, [isElectron, teardown, audioSource]);
 
   const stopSession = useCallback(() => {
     sessionIdRef.current++;
@@ -268,11 +284,23 @@ export default function RecorderTranscriber({
               <span className="text-zinc-500 text-[10px] uppercase tracking-wider font-semibold shrink-0">
                 Source
               </span>
-              <span className="text-zinc-300 text-xs truncate">
-                {isElectron
-                  ? "System audio (loudspeaker)"
-                  : "Browser tab / window audio"}
-              </span>
+              <Select
+                value={audioSource}
+                onValueChange={(v) => setAudioSource(v as "system" | "microphone")}
+                disabled={isActive}
+              >
+                <SelectTrigger className="h-7 w-[160px] text-xs bg-transparent border-none text-zinc-300 focus:ring-0 shadow-none px-0">
+                  <SelectValue placeholder="Select audio source" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-white/[0.08] text-zinc-300">
+                  <SelectItem value="system">
+                    {isElectron
+                      ? "System audio"
+                      : "Browser tab / window audio"}
+                  </SelectItem>
+                  <SelectItem value="microphone">Microphone</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 

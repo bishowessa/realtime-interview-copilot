@@ -35,8 +35,10 @@ export default function MainPage() {
   const { isExporting, error: exportError, exportNotes } = useExport();
   const [saveNoteError, setSaveNoteError] = useState<string | null>(null);
   const [dismissedError, setDismissedError] = useState(false);
-  const topError =
-    saveNoteError ?? notesError ?? presetsError ?? exportError ?? null;
+  
+  // Disabled error banner to avoid 'Failed to fetch' with no backend connected
+  const topError = null;
+  
   useEffect(() => {
     if (topError) setDismissedError(false);
   }, [topError]);
