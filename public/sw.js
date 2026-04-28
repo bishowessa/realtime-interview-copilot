@@ -37,8 +37,6 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   // Don't cache external API requests (Cloudflare Worker, Deepgram)
   if (
-    event.request.url.includes("realtime-worker-api") ||
-    event.request.url.includes("vedgupta.in") ||
     event.request.url.includes("deepgram.com") ||
     event.request.url.includes("posthog.com") ||
     event.request.url.includes("googletagmanager.com")
