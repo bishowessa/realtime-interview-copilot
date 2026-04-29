@@ -15,7 +15,7 @@ import { authClient } from "@/lib/auth-client";
 import { sendGTMEvent } from "@next/third-parties/google";
 import posthog from "posthog-js";
 import SafeMarkdown from "@/components/SafeMarkdown";
-import { BookmarkPlus, Sparkles, Zap } from "lucide-react";
+import { BookmarkPlus, Sparkles, Zap, Upload, Loader2 } from "lucide-react";
 
 const RecorderTranscriber = dynamic(() => import("@/components/recorder"), {
   ssr: false,
@@ -44,6 +44,7 @@ export function Copilot({
   const [completion, setCompletion] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+  const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const transcriptionBoxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -113,6 +114,50 @@ export function Copilot({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [handleKeyDown, isActive]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    try {
+      if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+        const text = await file.text();
+        setBg(text);
+      } else if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+        const script = document.createElement("script");
+        script.src = "/pdf.min.js";
+        document.body.appendChild(script);
+        
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+
+        const pdfjsLib = (window as any).pdfjsLib;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(" ");
+          fullText += pageText + "\n";
+        }
+        setBg(fullText);
+      } else {
+        alert("Unsupported file type. Please upload a .txt or .pdf file.");
+      }
+    } catch (err) {
+      console.error("Error extracting file:", err);
+      alert("Failed to extract text from file.");
+    } finally {
+      setIsExtracting(false);
+      event.target.value = "";
+    }
+  };
 
   const addTextinTranscription = (text: string) => {
     setTranscribedText((prev) => prev + " " + text);
@@ -323,11 +368,43 @@ export function Copilot({
               <Sparkles className="w-3 h-3 text-emerald-500/50" />
               Interview Context
             </Label>
-            {presetContext && (
-              <span className="text-[9px] text-emerald-500/60 bg-emerald-500/[0.06] px-2 py-0.5 rounded-full border border-emerald-500/10">
-                Preset loaded
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {presetContext && (
+                <span className="text-[9px] text-emerald-500/60 bg-emerald-500/[0.06] px-2 py-0.5 rounded-full border border-emerald-500/10">
+                  Preset loaded
+                </span>
+              )}
+              <div className="relative">
+                <input
+                  type="file"
+                  id="cv-upload"
+                  accept=".txt,.pdf"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isExtracting}
+                />
+                <label
+                  htmlFor="cv-upload"
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer border ${
+                    isExtracting
+                      ? "text-zinc-500 border-zinc-800 bg-zinc-900 cursor-not-allowed"
+                      : "text-zinc-400 border-white/[0.08] hover:text-zinc-200 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  {isExtracting ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Extracting CV...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3 h-3" />
+                      Upload CV
+                    </>
+                  )}
+                </label>
+              </div>
+            </div>
           </div>
 
           <Textarea
