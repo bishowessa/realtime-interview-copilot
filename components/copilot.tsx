@@ -555,7 +555,7 @@ export function Copilot({
               </div>
             </div>
           ) : (
-            <div className="prose prose-invert prose-xs max-w-none text-zinc-300 text-3xl md:text-base leading-relaxed pl-0.5 pr-1">
+            <div className="prose prose-invert prose-xs max-w-none text-zinc-300 text-2xl md:text-base leading-relaxed pl-0.5 pr-1">
               <SafeMarkdown>{completion}</SafeMarkdown>
             </div>
           )}
