@@ -26,6 +26,7 @@ import posthog from "posthog-js";
 interface RecorderTranscriberProps {
   addTextinTranscription: (text: string) => void;
   addTranscriptionSegment?: (segment: TranscriptionSegment) => void;
+  onRecordingStart?: () => void;
 }
 
 type SessionState = "idle" | "fetching-key" | "connecting" | "live";
@@ -33,6 +34,7 @@ type SessionState = "idle" | "fetching-key" | "connecting" | "live";
 export default function RecorderTranscriber({
   addTextinTranscription,
   addTranscriptionSegment,
+  onRecordingStart,
 }: RecorderTranscriberProps) {
   const isClientReady = useClientReady();
 
@@ -72,6 +74,7 @@ export default function RecorderTranscriber({
   }, []);
 
   const startSession = useCallback(async () => {
+    onRecordingStart?.();
     teardown();
 
     const thisSession = ++sessionIdRef.current;

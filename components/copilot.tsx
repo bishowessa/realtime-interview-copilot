@@ -45,6 +45,7 @@ export function Copilot({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
+  const [mobileTopView, setMobileTopView] = useState<"transcript" | "output">("transcript");
   const transcriptionBoxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -202,6 +203,7 @@ export function Copilot({
     setError(null);
     setCompletion("");
     setIsGenerating(true);
+    setMobileTopView("output");
 
     controller.current = new AbortController();
 
@@ -429,6 +431,7 @@ export function Copilot({
           <RecorderTranscriber
             addTextinTranscription={addTextinTranscription}
             addTranscriptionSegment={addTranscriptionSegment}
+            onRecordingStart={() => setMobileTopView("transcript")}
           />
         </div>
       </div>
@@ -486,8 +489,8 @@ export function Copilot({
         </Button>
       </div>
 
-      {/* AI Output Section (Mobile: 3rd, Desktop: Bottom Row) */}
-      <div className="flex-1 min-h-[300px] md:min-h-0 flex flex-col glass-card overflow-hidden rounded-2xl border border-white/[0.06] shrink-0 md:shrink md:col-span-2 md:row-start-3 order-3">
+      {/* AI Output Section (Mobile: dynamically swapped, Desktop: Bottom Row) */}
+      <div className={`flex-1 min-h-[300px] md:min-h-0 flex flex-col glass-card overflow-hidden rounded-2xl border border-white/[0.06] shrink-0 md:shrink md:col-span-2 md:row-start-3 ${mobileTopView === "output" ? "order-3" : "order-4"}`}>
         <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/[0.06] bg-zinc-900/30">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 truncate min-w-0 pr-2">
             Output
@@ -532,8 +535,8 @@ export function Copilot({
         </div>
       </div>
 
-      {/* Transcription Card (Mobile: Hidden initially, 4th when visible, Desktop: Top Right) */}
-      <div className={`glass-card p-5 min-h-[220px] md:h-full md:min-h-0 overflow-hidden md:col-start-2 md:row-start-1 order-4 shrink-0 flex-col ${completion ? 'flex' : 'hidden md:flex'}`}>
+      {/* Transcription Card (Mobile: dynamically swapped, Desktop: Top Right) */}
+      <div className={`glass-card p-5 min-h-[220px] md:h-full md:min-h-0 overflow-hidden md:col-start-2 md:row-start-1 shrink-0 flex flex-col ${mobileTopView === "transcript" ? "order-3" : "order-4"}`}>
         <div className="flex items-center justify-between mb-3 shrink-0">
           <Label
             htmlFor="transcription"
