@@ -361,113 +361,83 @@ export function Copilot({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 overflow-y-auto md:overflow-hidden">
+    <div className="flex flex-col md:grid md:grid-cols-2 md:grid-rows-[minmax(0,280px)_auto_minmax(0,1fr)] h-full min-h-0 gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 overflow-y-auto md:overflow-hidden">
       {error && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 px-4 py-2 text-center text-xs bg-red-500/90 backdrop-blur-xl text-white z-[60] animate-fade-in-scale rounded-xl border border-red-400/20 shadow-xl max-w-md">
           {error.message}
         </div>
       )}
 
-      {/* Top Section: Context & Transcription */}
-      <div className="grid gap-4 md:grid-cols-2 h-auto md:h-[280px] shrink-0">
-        {/* Context & Controls Card */}
-        <div className="glass-card p-5 flex flex-col gap-3 min-h-[220px] md:h-full md:min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between shrink-0">
-            <Label
-              htmlFor="system_prompt"
-              className="text-zinc-500 font-semibold tracking-wider text-[10px] uppercase flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3 h-3 text-emerald-500/50" />
-              Interview Context
-            </Label>
-            <div className="flex items-center gap-2">
-              {presetContext && (
-                <span className="text-[9px] text-emerald-500/60 bg-emerald-500/[0.06] px-2 py-0.5 rounded-full border border-emerald-500/10">
-                  Preset loaded
-                </span>
-              )}
-              <div className="relative">
-                <input
-                  type="file"
-                  id="cv-upload"
-                  accept=".txt,.pdf"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                  disabled={isExtracting}
-                />
-                <label
-                  htmlFor="cv-upload"
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer border ${
-                    isExtracting
-                      ? "text-zinc-500 border-zinc-800 bg-zinc-900 cursor-not-allowed"
-                      : "text-zinc-400 border-white/[0.08] hover:text-zinc-200 hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {isExtracting ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Extracting CV...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-3 h-3" />
-                      Upload CV
-                    </>
-                  )}
-                </label>
-              </div>
+      {/* Context Card (Mobile: 1st, Desktop: Top Left) */}
+      <div className="glass-card p-5 flex flex-col gap-3 min-h-[220px] md:h-full md:min-h-0 overflow-hidden md:col-start-1 md:row-start-1 order-1 shrink-0">
+        <div className="flex items-center justify-between shrink-0">
+          <Label
+            htmlFor="system_prompt"
+            className="text-zinc-500 font-semibold tracking-wider text-[10px] uppercase flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3 h-3 text-emerald-500/50" />
+            Interview Context
+          </Label>
+          <div className="flex items-center gap-2">
+            {presetContext && (
+              <span className="text-[9px] text-emerald-500/60 bg-emerald-500/[0.06] px-2 py-0.5 rounded-full border border-emerald-500/10">
+                Preset loaded
+              </span>
+            )}
+            <div className="relative">
+              <input
+                type="file"
+                id="cv-upload"
+                accept=".txt,.pdf"
+                className="hidden"
+                onChange={handleFileUpload}
+                disabled={isExtracting}
+              />
+              <label
+                htmlFor="cv-upload"
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer border ${
+                  isExtracting
+                    ? "text-zinc-500 border-zinc-800 bg-zinc-900 cursor-not-allowed"
+                    : "text-zinc-400 border-white/[0.08] hover:text-zinc-200 hover:bg-white/[0.04]"
+                }`}
+              >
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Extracting CV...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3 h-3" />
+                    Upload CV
+                  </>
+                )}
+              </label>
             </div>
-          </div>
-
-          <Textarea
-            id="system_prompt"
-            placeholder="Paste job description, resume, or interview topic here..."
-            className="flex-1 min-h-0 resize-none bg-transparent border-0 focus-visible:ring-0 p-0 text-zinc-200 placeholder:text-zinc-700 text-xs leading-relaxed overflow-y-auto"
-            value={bg}
-            onChange={(e) => setBg(e.target.value)}
-          />
-
-          <div className="pt-3 border-t border-white/[0.04] space-y-3 shrink-0">
-            <RecorderTranscriber
-              addTextinTranscription={addTextinTranscription}
-              addTranscriptionSegment={addTranscriptionSegment}
-            />
           </div>
         </div>
 
-        {/* Transcription Card */}
-        <div className="glass-card p-5 flex flex-col min-h-[220px] md:h-full md:min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between mb-3 shrink-0">
-            <Label
-              htmlFor="transcription"
-              className="text-zinc-500 font-semibold tracking-wider text-[10px] uppercase flex items-center gap-1.5"
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              Live Transcription
-            </Label>
-            <button
-              type="button"
-              className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors font-medium tracking-wide px-2 py-1 rounded-lg hover:bg-red-500/[0.06]"
-              onClick={clearTranscriptionChange}
-            >
-              Clear
-            </button>
-          </div>
-          <div
-            ref={transcriptionBoxRef}
-            className="flex-1 min-h-0 overflow-y-auto rounded-xl custom-scrollbar -mr-2 pr-2"
-          >
-            <TranscriptionDisplay segments={transcriptionSegments} />
-          </div>
+        <Textarea
+          id="system_prompt"
+          placeholder="Paste job description, resume, or interview topic here..."
+          className="flex-1 min-h-0 resize-none bg-transparent border-0 focus-visible:ring-0 p-0 text-zinc-200 placeholder:text-zinc-700 text-xs leading-relaxed overflow-y-auto"
+          value={bg}
+          onChange={(e) => setBg(e.target.value)}
+        />
+
+        <div className="pt-3 border-t border-white/[0.04] space-y-3 shrink-0">
+          <RecorderTranscriber
+            addTextinTranscription={addTextinTranscription}
+            addTranscriptionSegment={addTranscriptionSegment}
+          />
         </div>
       </div>
 
-      {/* Action Bar (Locked to the bottom of the UI, just above the output box) */}
+      {/* Action Bar (Mobile: 2nd, Desktop: Middle Row) */}
       <div
         ref={formRef as any}
-        className="w-full flex items-center justify-between gap-3 shrink-0"
+        className="w-full flex items-center justify-between gap-3 shrink-0 md:col-span-2 md:row-start-2 order-2"
       >
-        {/* Mode Switcher */}
         <div className="flex items-center gap-2 glass-panel px-3 py-1.5 rounded-xl">
           <span
             className={`text-[10px] font-medium transition-colors ${flag === FLAGS.SUMMARIZER ? "text-blue-400" : "text-zinc-600"}`}
@@ -516,8 +486,8 @@ export function Copilot({
         </Button>
       </div>
 
-      {/* AI Output Section — toolbar keeps Save visible; body has even horizontal padding */}
-      <div className="flex-1 min-h-[300px] md:min-h-0 flex flex-col glass-card overflow-hidden rounded-2xl border border-white/[0.06] shrink-0 md:shrink">
+      {/* AI Output Section (Mobile: 3rd, Desktop: Bottom Row) */}
+      <div className="flex-1 min-h-[300px] md:min-h-0 flex flex-col glass-card overflow-hidden rounded-2xl border border-white/[0.06] shrink-0 md:shrink md:col-span-2 md:row-start-3 order-3">
         <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/[0.06] bg-zinc-900/30">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 truncate min-w-0 pr-2">
             Output
@@ -559,6 +529,32 @@ export function Copilot({
               <SafeMarkdown>{completion}</SafeMarkdown>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Transcription Card (Mobile: Hidden initially, 4th when visible, Desktop: Top Right) */}
+      <div className={`glass-card p-5 min-h-[220px] md:h-full md:min-h-0 overflow-hidden md:col-start-2 md:row-start-1 order-4 shrink-0 flex-col ${completion ? 'flex' : 'hidden md:flex'}`}>
+        <div className="flex items-center justify-between mb-3 shrink-0">
+          <Label
+            htmlFor="transcription"
+            className="text-zinc-500 font-semibold tracking-wider text-[10px] uppercase flex items-center gap-1.5"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            Live Transcription
+          </Label>
+          <button
+            type="button"
+            className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors font-medium tracking-wide px-2 py-1 rounded-lg hover:bg-red-500/[0.06]"
+            onClick={clearTranscriptionChange}
+          >
+            Clear
+          </button>
+        </div>
+        <div
+          ref={transcriptionBoxRef}
+          className="flex-1 min-h-0 overflow-y-auto rounded-xl custom-scrollbar -mr-2 pr-2"
+        >
+          <TranscriptionDisplay segments={transcriptionSegments} />
         </div>
       </div>
     </div>
