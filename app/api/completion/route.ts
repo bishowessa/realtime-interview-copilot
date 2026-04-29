@@ -7,6 +7,7 @@ export async function POST(req: Request) {
     const bg = payload.bg || "";
     
     let finalPrompt = prompt;
+    
     if (payload.flag === "copilot") {
       const systemInstruction = `You are an expert senior software engineer and interview copilot. You possess vast general knowledge about programming, system design, and computer science. Answer the interviewer's questions flawlessly using your full capabilities. Additionally, you will be provided with the candidate's personal background context. Whenever relevant, naturally weave this context into your technical answers to personalize them, but never restrict your knowledge only to the context. If a question is general, answer it fully.
 
@@ -17,44 +18,45 @@ CRITICAL INSTRUCTIONS FOR LIVE TRANSCRIPTIONS:
 2. Context Retention: Use the earlier parts of the transcript strictly as conversational context. The interviewer may ask follow-up questions based on previous answers, so you must understand the flow of the conversation, but only output the response for the newest prompt.
 3. Format & Verbosity: Keep your answers highly concise and short so they can be read quickly on a screen, but ensure they are technically sufficient and do not miss critical details. Use short bullet points or quick sentences. Eliminate fluff.`;
       
-      if (bg) {
-        finalPrompt = `${systemInstruction}\n\nCandidate's Background Context:\n${bg}\n\nRunning Interview Transcript:\n${prompt}`;
-      } else {
-        finalPrompt = `${systemInstruction}\n\nRunning Interview Transcript:\n${prompt}`;
-      }
+      finalPrompt = bg 
+        ? `${systemInstruction}\n\nCandidate's Background Context:\n${bg}\n\nRunning Interview Transcript:\n${prompt}`
+        : `${systemInstruction}\n\nRunning Interview Transcript:\n${prompt}`;
     } else if (payload.flag === "summarizer") {
       finalPrompt = `Summarize the following:\n${prompt}`;
     }
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
+      console.error("[API ERROR] Missing GOOGLE_GENERATIVE_AI_API_KEY");
       return NextResponse.json({ error: "Missing GOOGLE_GENERATIVE_AI_API_KEY" }, { status: 500 });
     }
 
     const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+    console.log(`[API REQUEST] Firing request to Gemini using model: ${modelName}`);
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${apiKey}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: finalPrompt }] }]
       }),
     });
 
+    // Handle Google's 429 or other errors directly
     if (!response.ok) {
       const text = await response.text();
+      console.error(`[GEMINI REJECTED] Status: ${response.status} - Details: ${text}`);
       return NextResponse.json({ error: `Gemini API error: ${text}` }, { status: response.status });
     }
     
+    console.log("[API SUCCESS] Stream opened, parsing SSE data...");
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new TextEncoder();
     
     (async () => {
       try {
-        if (!response.body) throw new Error("No body");
+        if (!response.body) throw new Error("No body returned from Gemini");
         const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
         let buffer = "";
         const SSERegex = /^data:\s*(.*)(?:\n\n|\r\r|\r\n\r\n)/;
@@ -84,7 +86,7 @@ CRITICAL INSTRUCTIONS FOR LIVE TRANSCRIPTIONS:
         }
         await writer.write(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
-        console.error("Stream error", err);
+        console.error("[STREAM ERROR]", err);
         const errPayload = { error: String(err) };
         try { await writer.write(encoder.encode(`data: ${JSON.stringify(errPayload)}\n\n`)); } catch {}
       } finally {
@@ -101,7 +103,7 @@ CRITICAL INSTRUCTIONS FOR LIVE TRANSCRIPTIONS:
     });
 
   } catch (error) {
-    console.error('Completion error:', error);
+    console.error('[CRITICAL COMPLETION ERROR]:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

@@ -42,7 +42,7 @@ export function Copilot({
   const [flag, setFlag] = useState<FLAGS>(FLAGS.COPILOT);
   const [bg, setBg] = useState<string>("");
   const [completion, setCompletion] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const transcriptionBoxRef = useRef<HTMLDivElement>(null);
 
@@ -144,19 +144,19 @@ export function Copilot({
     if (controller.current) {
       controller.current.abort();
       controller.current = null;
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isLoading) return;
+    if (isGenerating) return;
     if (controller.current) return;
 
     setError(null);
     setCompletion("");
-    setIsLoading(true);
+    setIsGenerating(true);
 
     controller.current = new AbortController();
 
@@ -247,7 +247,7 @@ export function Copilot({
         );
       }
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
       controller.current = null;
     }
   };
@@ -343,64 +343,6 @@ export function Copilot({
               addTextinTranscription={addTextinTranscription}
               addTranscriptionSegment={addTranscriptionSegment}
             />
-
-            <div
-              ref={formRef as any}
-              className="w-full flex items-center justify-between gap-3"
-            >
-              {/* Mode Switcher */}
-              <div className="flex items-center gap-2 glass-panel px-3 py-1.5 rounded-xl">
-                <span
-                  className={`text-[10px] font-medium transition-colors ${flag === FLAGS.SUMMARIZER ? "text-blue-400" : "text-zinc-600"}`}
-                >
-                  Summarizer
-                </span>
-                <Switch
-                  className="scale-75 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-zinc-700"
-                  onCheckedChange={handleFlag}
-                  checked={flag === FLAGS.COPILOT}
-                />
-                <span
-                  className={`text-[10px] font-medium transition-colors ${flag === FLAGS.COPILOT ? "text-emerald-400" : "text-zinc-600"}`}
-                >
-                  Copilot
-                </span>
-              </div>
-
-              <Button
-                className="h-9 px-6 accent-gradient text-white font-medium shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-[0.97] text-xs tracking-wide rounded-xl"
-                type="button"
-                onClick={(e) => {
-                  if (isLoading) {
-                    stop(e);
-                  } else {
-                    handleSubmit(e as any);
-                  }
-                }}
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-1">
-                    <span
-                      className="w-1 h-1 bg-white rounded-full animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <span
-                      className="w-1 h-1 bg-white rounded-full animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <span
-                      className="w-1 h-1 bg-white rounded-full animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    />
-                  </div>
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5" />
-                    Generate
-                  </span>
-                )}
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -429,6 +371,60 @@ export function Copilot({
             <TranscriptionDisplay segments={transcriptionSegments} />
           </div>
         </div>
+      </div>
+
+      {/* Action Bar (Locked to the bottom of the UI, just above the output box) */}
+      <div
+        ref={formRef as any}
+        className="w-full flex items-center justify-between gap-3 shrink-0"
+      >
+        {/* Mode Switcher */}
+        <div className="flex items-center gap-2 glass-panel px-3 py-1.5 rounded-xl">
+          <span
+            className={`text-[10px] font-medium transition-colors ${flag === FLAGS.SUMMARIZER ? "text-blue-400" : "text-zinc-600"}`}
+          >
+            Summarizer
+          </span>
+          <Switch
+            className="scale-75 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-zinc-700"
+            onCheckedChange={handleFlag}
+            checked={flag === FLAGS.COPILOT}
+          />
+          <span
+            className={`text-[10px] font-medium transition-colors ${flag === FLAGS.COPILOT ? "text-emerald-400" : "text-zinc-600"}`}
+          >
+            Copilot
+          </span>
+        </div>
+
+        <Button
+          className="h-9 px-6 accent-gradient text-white font-medium shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-[0.97] text-xs tracking-wide rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+          disabled={isGenerating}
+          onClick={(e) => handleSubmit(e)}
+        >
+          {isGenerating ? (
+            <div className="flex items-center gap-1">
+              <span
+                className="w-1 h-1 bg-white rounded-full animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              />
+              <span
+                className="w-1 h-1 bg-white rounded-full animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              />
+              <span
+                className="w-1 h-1 bg-white rounded-full animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              />
+            </div>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5" />
+              Generate
+            </span>
+          )}
+        </Button>
       </div>
 
       {/* AI Output Section — toolbar keeps Save visible; body has even horizontal padding */}
