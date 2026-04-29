@@ -2,25 +2,30 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const payload = (await req.json()) as { prompt: string; bg?: string; flag?: string };
+    const payload = (await req.json()) as { prompt: string; bg?: string; flag?: string; latestQuestion?: string; transcriptHistory?: string };
     const prompt = payload.prompt;
     const bg = payload.bg || "";
+    const latestQuestion = payload.latestQuestion || prompt;
+    const transcriptHistory = payload.transcriptHistory || "";
     
     let finalPrompt = prompt;
     
     if (payload.flag === "copilot") {
-      const systemInstruction = `You are an expert senior software engineer and interview copilot. You possess vast general knowledge about programming, system design, and computer science. Answer the interviewer's questions flawlessly using your full capabilities. Additionally, you will be provided with the candidate's personal background context. Whenever relevant, naturally weave this context into your technical answers to personalize them, but never restrict your knowledge only to the context. If a question is general, answer it fully.
+      const systemInstruction = `You are an expert software engineer taking a live technical interview. You must answer the interviewer's latest question flawlessly, but you MUST sound like a real human being speaking naturally.
 
-While you are primarily an expert software engineering copilot, you must act as an omniscient general AI if the topic changes. If the interviewer asks a question that is completely unrelated to software engineering or the user's background (for example: medical questions, general science, riddles, or history), you must INSTANTLY drop the software engineering persona. Answer the non-technical question factually, accurately, and perfectly as a general AI. Do not try to force a coding context onto a medical or general question. Never hallucinate.
+CRITICAL TONE INSTRUCTIONS:
 
-CRITICAL INSTRUCTIONS FOR LIVE TRANSCRIPTIONS:
-1. Focus on the Latest Unanswered Questions: You will be provided with a running transcript of an interview. You must ONLY answer the newly asked questions at the very end of the transcript. If the interviewer asked multiple new questions in their most recent turn, answer all of them. Do not re-answer older questions from earlier in the conversation.
-2. Context Retention: Use the earlier parts of the transcript strictly as conversational context. The interviewer may ask follow-up questions based on previous answers, so you must understand the flow of the conversation, but only output the response for the newest prompt.
-3. Format & Verbosity: Keep your answers highly concise and short so they can be read quickly on a screen, but ensure they are technically sufficient and do not miss critical details. Use short bullet points or quick sentences. Eliminate fluff.`;
+Write in the first-person perspective ('I usually...', 'In my experience...', 'What I like to do is...').
+
+NEVER use bullet points, numbered lists, or markdown formatting like bold text.
+
+Write in short, conversational, easy-to-read paragraphs. The text should flow exactly like a spoken script that the candidate can read aloud seamlessly.
+
+Sound confident but natural. If discussing a technical choice, frame it as a professional preference based on experience.
+
+Keep the response highly concise (2 to 3 short sentences maximum). The candidate needs to read this quickly on a screen, so get straight to the exact terminology or solution, but wrap it in natural conversational phrasing.`;
       
-      finalPrompt = bg 
-        ? `${systemInstruction}\n\nCandidate's Background Context:\n${bg}\n\nRunning Interview Transcript:\n${prompt}`
-        : `${systemInstruction}\n\nRunning Interview Transcript:\n${prompt}`;
+      finalPrompt = `${systemInstruction}\n\nCandidate Background: ${bg}\n\nPrevious Conversation History (FOR CONTEXT ONLY, DO NOT ANSWER THESE):\n${transcriptHistory}\n\n=====================================\nLATEST QUESTION (YOU MUST ONLY ANSWER THIS):\n${latestQuestion}\n=====================================`;
     } else if (payload.flag === "summarizer") {
       finalPrompt = `Summarize the following:\n${prompt}`;
     }

@@ -212,6 +212,16 @@ export function Copilot({
       transcription_length: transcribedText.length,
     });
 
+    let latestQuestion = "";
+    let transcriptHistory = "";
+    if (transcriptionSegments.length > 0) {
+      const lastSegment = transcriptionSegments[transcriptionSegments.length - 1];
+      latestQuestion = lastSegment.text;
+      transcriptHistory = transcriptionSegments.slice(0, -1).map((s) => s.text).join(" ");
+    } else {
+      latestQuestion = transcribedText;
+    }
+
     try {
       const response = await fetch(`${BACKEND_API_URL}/api/completion`, {
         method: "POST",
@@ -222,6 +232,8 @@ export function Copilot({
           bg,
           flag,
           prompt: transcribedText,
+          latestQuestion,
+          transcriptHistory,
         }),
         signal: controller.current.signal,
         credentials: "include",
@@ -543,7 +555,7 @@ export function Copilot({
               </div>
             </div>
           ) : (
-            <div className="prose prose-invert prose-xs max-w-none text-zinc-300 text-xs leading-relaxed pl-0.5 pr-1">
+            <div className="prose prose-invert prose-xs max-w-none text-zinc-300 text-xl md:text-base leading-relaxed pl-0.5 pr-1">
               <SafeMarkdown>{completion}</SafeMarkdown>
             </div>
           )}
