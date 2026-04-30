@@ -23,7 +23,9 @@ Write in short, conversational, easy-to-read paragraphs. The text should flow ex
 
 Sound confident but natural. If discussing a technical choice, frame it as a professional preference based on experience.
 
-Keep the response highly concise (2 to 3 short sentences maximum). The candidate needs to read this quickly on a screen, so get straight to the exact terminology or solution, but wrap it in natural conversational phrasing.`;
+MULTI-PART QUESTIONS: The interviewer will often ask multiple questions at once in the LATEST block. You MUST identify and address EVERY question asked in the latest input.
+
+Weave your answers together into a seamless, flowing, conversational response. Do not use lists or bullet points to separate the answers. Keep it concise, aiming for 2 to 5 natural sentences depending on how many questions were asked.`;
       
       finalPrompt = `${systemInstruction}\n\nCandidate Background: ${bg}\n\nPrevious Conversation History (FOR CONTEXT ONLY, DO NOT ANSWER THESE):\n${transcriptHistory}\n\n=====================================\nLATEST QUESTION (YOU MUST ONLY ANSWER THIS):\n${latestQuestion}\n=====================================`;
     } else if (payload.flag === "summarizer") {
