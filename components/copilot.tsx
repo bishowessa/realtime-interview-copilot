@@ -47,7 +47,17 @@ export function Copilot({
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [mobileTopView, setMobileTopView] = useState<"transcript" | "output">("transcript");
   const transcriptionBoxRef = useRef<HTMLDivElement>(null);
-  const lastSubmittedTranscriptRef = useRef<string>("");
+  const latestTranscriptRef = useRef<string>("");
+  const isGeneratingRef = useRef<boolean>(false);
+  const lastProcessedLength = useRef<number>(0);
+
+  useEffect(() => {
+    latestTranscriptRef.current = transcriptionSegments.map((s) => s.text).join(" ") + " " + transcribedText;
+  }, [transcriptionSegments, transcribedText]);
+
+  useEffect(() => {
+    isGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
 
   useEffect(() => {
     if (transcriptionBoxRef.current) {
@@ -202,9 +212,6 @@ export function Copilot({
     }
     if (isGenerating) return;
     if (controller.current) return;
-
-    const currentTranscriptStr = transcriptionSegments.map(s => s.text).join(" ") + " " + transcribedText;
-    lastSubmittedTranscriptRef.current = currentTranscriptStr;
 
     setError(null);
     setIsGenerating(true);
@@ -376,23 +383,28 @@ export function Copilot({
     }
   }, [session, isActive]);
 
+  const handleSubmitRef = useRef(handleSubmit);
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  });
+
   useEffect(() => {
     if (!isActive) return;
 
-    const currentTranscriptStr = transcriptionSegments.map((s) => s.text).join(" ") + " " + transcribedText;
-    
-    if (!currentTranscriptStr.trim()) return;
-    if (currentTranscriptStr === lastSubmittedTranscriptRef.current) return;
-
-    const timer = setTimeout(() => {
-      if (!isGenerating) {
-        handleSubmit();
+    const intervalId = setInterval(() => {
+      const currentLength = latestTranscriptRef.current.length;
+      
+      if (currentLength > lastProcessedLength.current) {
+        lastProcessedLength.current = currentLength;
+        
+        if (!isGeneratingRef.current) {
+          handleSubmitRef.current();
+        }
       }
-    }, 2500);
+    }, 5500);
 
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transcriptionSegments, transcribedText, isActive, isGenerating]);
+    return () => clearInterval(intervalId);
+  }, [isActive]);
 
   if (!isClientReady) {
     return <CopilotSkeleton />;
