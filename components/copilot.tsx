@@ -47,6 +47,7 @@ export function Copilot({
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [mobileTopView, setMobileTopView] = useState<"transcript" | "output">("transcript");
   const transcriptionBoxRef = useRef<HTMLDivElement>(null);
+  const lastSubmittedTranscriptRef = useRef<string>("");
 
   useEffect(() => {
     if (transcriptionBoxRef.current) {
@@ -194,14 +195,18 @@ export function Copilot({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleSubmit = async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (isGenerating) return;
     if (controller.current) return;
 
+    const currentTranscriptStr = transcriptionSegments.map(s => s.text).join(" ") + " " + transcribedText;
+    lastSubmittedTranscriptRef.current = currentTranscriptStr;
+
     setError(null);
-    setCompletion("");
     setIsGenerating(true);
     setMobileTopView("output");
 
@@ -223,6 +228,9 @@ export function Copilot({
     } else {
       latestQuestion = transcribedText;
     }
+
+    let hasClearedPrevious = false;
+    let accumulatedText = "";
 
     try {
       const response = await fetch(`${BACKEND_API_URL}/api/completion`, {
@@ -290,7 +298,17 @@ export function Copilot({
             }
 
             if (parsed.text) {
-              setCompletion((text) => text + parsed.text);
+              accumulatedText += parsed.text;
+              if (!hasClearedPrevious) {
+                if ("[WAITING]".startsWith(accumulatedText.trim())) {
+                  // Do nothing yet, keep buffering in case it's "[WAITING]"
+                } else {
+                  hasClearedPrevious = true;
+                  setCompletion(accumulatedText);
+                }
+              } else {
+                setCompletion((text) => text + parsed.text);
+              }
             }
           } catch (err) {
             console.error("Error parsing SSE data:", err);
@@ -357,6 +375,24 @@ export function Copilot({
       window.electronAPI.windowSetSize(1180, 640);
     }
   }, [session, isActive]);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const currentTranscriptStr = transcriptionSegments.map((s) => s.text).join(" ") + " " + transcribedText;
+    
+    if (!currentTranscriptStr.trim()) return;
+    if (currentTranscriptStr === lastSubmittedTranscriptRef.current) return;
+
+    const timer = setTimeout(() => {
+      if (!isGenerating) {
+        handleSubmit();
+      }
+    }, 2500);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transcriptionSegments, transcribedText, isActive, isGenerating]);
 
   if (!isClientReady) {
     return <CopilotSkeleton />;
@@ -459,13 +495,8 @@ export function Copilot({
           </span>
         </div>
 
-        <Button
-          className="h-9 px-6 accent-gradient text-white font-medium shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-[0.97] text-xs tracking-wide rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          type="button"
-          disabled={isGenerating}
-          onClick={(e) => handleSubmit(e)}
-        >
-          {isGenerating ? (
+        {isGenerating && (
+          <div className="h-9 px-6 flex items-center justify-center accent-gradient text-white font-medium shadow-lg shadow-emerald-500/20 text-xs tracking-wide rounded-xl">
             <div className="flex items-center gap-1">
               <span
                 className="w-1 h-1 bg-white rounded-full animate-bounce"
@@ -480,13 +511,8 @@ export function Copilot({
                 style={{ animationDelay: "300ms" }}
               />
             </div>
-          ) : (
-            <span className="flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5" />
-              Generate
-            </span>
-          )}
-        </Button>
+          </div>
+        )}
       </div>
 
       {/* AI Output Section (Mobile: dynamically swapped, Desktop: Bottom Row) */}
@@ -519,11 +545,7 @@ export function Copilot({
                   Ready to assist
                 </p>
                 <p className="text-xs text-zinc-600 mt-1">
-                  Start recording or press{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-zinc-500 font-mono text-[9px]">
-                    Enter
-                  </kbd>{" "}
-                  to generate
+                  Start recording and speak. The AI will respond automatically.
                 </p>
               </div>
             </div>
