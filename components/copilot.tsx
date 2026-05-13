@@ -47,17 +47,18 @@ export function Copilot({
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [mobileTopView, setMobileTopView] = useState<"transcript" | "output">("transcript");
   const transcriptionBoxRef = useRef<HTMLDivElement>(null);
-  const latestTranscriptRef = useRef<string>("");
-  const isGeneratingRef = useRef<boolean>(false);
-  const lastProcessedLength = useRef<number>(0);
+  const lastProcessedSegmentIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    latestTranscriptRef.current = transcriptionSegments.map((s) => s.text).join(" ") + " " + transcribedText;
-  }, [transcriptionSegments, transcribedText]);
-
-  useEffect(() => {
-    isGeneratingRef.current = isGenerating;
-  }, [isGenerating]);
+  const isInterviewerQuestion = (text: string): boolean => {
+    if (text.includes("?")) return true;
+    const lowerText = text.toLowerCase();
+    const patterns = [
+      /\bhow\b/, /\bwhat\b/, /\bwhy\b/, /\bexplain\b/, /\btell me\b/, 
+      /\bdescribe\b/, /\bcan you\b/, /\bwalk me through\b/, 
+      /\bdifference between\b/, /\bwhat is\b/, /\bwhat's\b/
+    ];
+    return patterns.some(pattern => pattern.test(lowerText));
+  };
 
   useEffect(() => {
     if (transcriptionBoxRef.current) {
@@ -390,21 +391,18 @@ export function Copilot({
 
   useEffect(() => {
     if (!isActive) return;
+    if (transcriptionSegments.length === 0) return;
 
-    const intervalId = setInterval(() => {
-      const currentLength = latestTranscriptRef.current.length;
+    const lastSegment = transcriptionSegments[transcriptionSegments.length - 1];
+
+    if (lastSegment.isFinal && lastSegment.id !== lastProcessedSegmentIdRef.current) {
+      lastProcessedSegmentIdRef.current = lastSegment.id;
       
-      if (currentLength > lastProcessedLength.current) {
-        lastProcessedLength.current = currentLength;
-        
-        if (!isGeneratingRef.current) {
-          handleSubmitRef.current();
-        }
+      if (isInterviewerQuestion(lastSegment.text)) {
+        handleSubmitRef.current();
       }
-    }, 5500);
-
-    return () => clearInterval(intervalId);
-  }, [isActive]);
+    }
+  }, [transcriptionSegments, isActive]);
 
   if (!isClientReady) {
     return <CopilotSkeleton />;
